@@ -4,7 +4,8 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "start": "npx tsx ./index.ts"
+    "start": "node --import tsx/esm ./index.ts",
+    "start-ts": "node --no-warnings=ExperimentalWarning --loader ./loader.js ./index.ts"
   },
   "_moduleAliases": {
     "~": "./*",
@@ -32,14 +33,16 @@
     "module-alias": "^2.2.3",
     "node-fetch": "^3.3.2",
     "node-fetch-native": "^1.6.3",
+    "node-ts": "^6.0.1",
     "ofetch": "^1.3.3",
     "oracledb": "^6.4.0",
     "prompt-sync": "^4.2.0",
-    "ts-node": "^10.9.2",
     "typescript": "^5.4.3"
   },
   "devDependencies": {
     "@types/minimist": "^1.2.5",
+    "nodemon": "^3.1.0",
+    "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "tsx": "^4.7.1"
   }
