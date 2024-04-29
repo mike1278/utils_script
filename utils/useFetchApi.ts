@@ -1,7 +1,7 @@
-import type {FetchError} from 'ofetch'
-import lodash from "lodash"
-import {$fetch} from "ofetch"
-import type {FetchOptions} from "ofetch"
+import type { FetchError } from 'ofetch'
+import lodash from 'lodash'
+import { $fetch } from 'ofetch'
+import type { FetchOptions } from 'ofetch'
 
 const merge = lodash.merge
 
@@ -21,10 +21,13 @@ export default async <DataT>(url: string, options: FetchOptions = {}) => {
 
     merge(otherOptions, options)
     // @ts-ignore
-    return (await $fetch<DataT>(`${url}`, {//^ $fetch used to avoid status pending
-        ...otherOptions,
-        baseURL
-    }).catch((error: FetchError<any>) => {
-        console.log(error)
-    })) ?? null
+    return (
+        (await $fetch<DataT>(`${url}`, {
+            //^ $fetch used to avoid status pending
+            ...otherOptions,
+            baseURL,
+        }).catch((error: FetchError<any>) => {
+            console.log(error)
+        })) ?? null
+    )
 }

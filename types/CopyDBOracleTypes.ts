@@ -1,9 +1,9 @@
-import minimist from "minimist"
+import minimist from 'minimist'
 
 export interface Table {
-    name: string,
+    name: string
     constrains: {
-        table: string,
+        table: string
         name: string
     }[]
 }
@@ -21,6 +21,4 @@ export interface Sequence {
 export type TypeDDL = 'TABLE' | 'SEQUENCE' | 'CONSTRAINT' | 'REF_CONSTRAINT'
 export type WhatCopy = 'sequence' | 'table' | 'data' | 'foreign'
 
-export interface CommandArgs extends minimist.ParsedArgs {
-
-}
+export interface CommandArgs extends minimist.ParsedArgs {}

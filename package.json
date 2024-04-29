@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "start": "node --import tsx/esm ./index.ts",
+    "start": "node --no-warnings=ExperimentalWarning --loader tsx/esm ./index.ts",
     "start-ts": "node --no-warnings=ExperimentalWarning --loader ./loader.js ./index.ts"
   },
   "_moduleAliases": {
@@ -42,6 +42,7 @@
   "devDependencies": {
     "@types/minimist": "^1.2.5",
     "nodemon": "^3.1.0",
+    "prettier": "3.2.5",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "tsx": "^4.7.1"

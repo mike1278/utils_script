@@ -1,0 +1,11 @@
+.env
+.env.example
+loader.js
+package-lock.json
+package.json
+tsconfig.json
+.gitignore
+output
+dependencies
+.idea
+node_modules

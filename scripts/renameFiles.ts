@@ -1,7 +1,7 @@
-import minimist from "minimist"
-import {prompt} from "~/utils/commandUtils"
-import {readFiles} from "~/utils/fileUtils"
-import fs from "fs"
+import minimist from 'minimist'
+import { prompt } from '~/utils/commandUtils'
+import { readFiles } from '~/utils/fileUtils'
+import fs from 'fs'
 
 const validPath = (path: string | undefined) => !path || path === '?'
 

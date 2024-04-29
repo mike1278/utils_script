@@ -1,11 +1,10 @@
-import {spawn} from 'child_process'
-import minimist from "minimist"
+import { spawn } from 'child_process'
+import minimist from 'minimist'
 
 export default async (args: CommandArgs) => {
-    if (args?.example == "false") {
-
+    if (args?.example == 'false') {
     }
-    const commandProcess = spawn('python', ["./some.py"])
+    const commandProcess = spawn('python', ['./some.py'])
 
     commandProcess.on('close', async (code) => {
         if (code != 0) {

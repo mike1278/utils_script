@@ -1,10 +1,10 @@
-import minimist from "minimist"
-import {prompt} from "~/utils/commandUtils"
-import {readFiles} from "~/utils/fileUtils"
-import fs from "fs"
-import Exiftool from "exiftool-vendored"
+import minimist from 'minimist'
+import { prompt } from '~/utils/commandUtils'
+import { readFiles } from '~/utils/fileUtils'
+import fs from 'fs'
+import Exiftool from 'exiftool-vendored'
 
-const exiftool = new Exiftool.ExifTool({taskTimeoutMillis: 5000})
+const exiftool = new Exiftool.ExifTool({ taskTimeoutMillis: 5000 })
 
 const validPath = (path: string | undefined) => !path || path === '?'
 
@@ -26,15 +26,17 @@ export default async (args: CommandArgs) => {
         throw new Error('No path specified')
     }
 
-    const files = (await readFiles(path as string))
-        .filter(file => isImage(file))
+    const files = (await readFiles(path as string)).filter((file) => isImage(file))
 
     for (const file of files) {
-        await exiftool.read(file).then(result => {
-            console.log(`${file}: `, result)
-        }).catch(error => {
-            console.log('Error reading file: ', error)
-        })
+        await exiftool
+            .read(file)
+            .then((result) => {
+                console.log(`${file}: `, result)
+            })
+            .catch((error) => {
+                console.log('Error reading file: ', error)
+            })
     }
 }
 

@@ -1,37 +1,34 @@
 import oracledb from 'oracledb'
-import type {CommandArgs, WhatCopy} from '~/types/CopyDBOracleTypes'
+import type { CommandArgs, WhatCopy } from '~/types/CopyDBOracleTypes'
 import {
     connectTo,
     getDDL,
     getUser,
     removeForeignKeysFromDDLTable,
-    runCopyDataTableWorker
+    resolveProblemsWithData,
+    runCopyDataTableWorker,
 } from '~/services/OracleService'
-import {chunks} from "~/utils/arrayUtils"
-
-let source: null | oracledb.Connection = null
-let destination: null | oracledb.Connection = null
+import { chunks } from '~/utils/arrayUtils'
+import { getEnv } from '~/utils/commandUtils.ts'
 
 // cache of the tables list for later use when copying the data
 let tables: string[] = []
 
-const tablesToExclude = (process.env.TABLES_TO_IGNORE?.split(','))?.filter(t => t.trim() != '') ?? []
-const onlyTables = (process.env.ONLY_SOME_TABLES?.split(','))?.filter(t => t.trim() != '') ?? []
+const tablesToExclude =
+    process.env.TABLES_TO_IGNORE?.split(',')?.filter((t) => t.trim() != '') ?? []
+const onlyTables = process.env.ONLY_SOME_TABLES?.split(',')?.filter((t) => t.trim() != '') ?? []
 
-const copyTables = async () => {
-    if (!source) {
-        throw new Error('source is not defined')
-    }
-
+const copyTables = async (source: oracledb.Connection, destination: oracledb.Connection) => {
     await removeForeignKeysFromDDLTable(source)
-    await executeDDL(await getDDL(source, 'TABLE'))
-        .catch(e => {
-            console.log('Error setting ddl for table ', e)
-        })
-    console.log('Done copying collections');
+    await executeDDL(destination, await getDDL(source, 'TABLE'))
+    console.log('Done copying collections')
 }
 
-const executeDDL = async (resultDDL: oracledb.Result<string[]>) => {
+const executeDDL = async (
+    destination: oracledb.Connection,
+    resultDDL: oracledb.Result<string[]>,
+    executeOnError: null | ((ddl: string, e: Error) => void) = null,
+) => {
     if (!resultDDL.rows) {
         return
     }
@@ -39,43 +36,39 @@ const executeDDL = async (resultDDL: oracledb.Result<string[]>) => {
     for (const row of resultDDL.rows) {
         const ddl = row[0]
 
-        await destination?.execute(ddl as string)
-            .catch(e => {
-                console.log('Error setting ddl: ', ddl, e)
-            })
-    }
-}
-
-const copySequences = async () => {
-    if (!source) {
-        throw new Error('source is not defined')
-    }
-
-    await executeDDL(await getDDL(source, 'SEQUENCE'))
-        .catch(e => {
-            console.log('Error setting ddl for sequence ', e)
+        await destination?.execute(ddl as string).catch((e) => {
+            console.log('Error setting ddl: ', ddl, e)
+            executeOnError?.(ddl, e)
         })
+    }
 }
 
-const addingForeignKeys = async () => {
-    if (!source) {
-        throw new Error('source is not defined')
-    }
+const copySequences = async (source: oracledb.Connection, destination: oracledb.Connection) => {
+    await executeDDL(destination, await getDDL(source, 'SEQUENCE'))
+}
 
-    await executeDDL(await getDDL(source, 'REF_CONSTRAINT'))
+const addingForeignKeys = async (source: oracledb.Connection, destination: oracledb.Connection) => {
+    await executeDDL(destination, await getDDL(source, 'REF_CONSTRAINT'), (ddl, e) =>
+        resolveProblemsWithData(ddl, destination, e),
+    )
 }
 
 const copyData = async () => {
     const errorTables: string[] = []
     console.log('Tables to ignore: ' + tablesToExclude.length)
-    for (const chunk of chunks(tables, 100)) {
-        console.log(chunk.join(','))
-        await Promise.all(chunk.map(async (table) =>
-            await runCopyDataTableWorker(table)
-                .catch(e => {
-                    console.log(e)
-                    errorTables.push(table)
-                }))
+
+    const threads = Number.parseInt(getEnv('THREADS', '50'))
+
+    for (const chunk of chunks(tables, threads)) {
+        console.log('New chunk')
+        await Promise.all(
+            chunk.map(
+                async (table) =>
+                    await runCopyDataTableWorker(table).catch((e) => {
+                        console.log(e)
+                        errorTables.push(table)
+                    }),
+            ),
         )
     }
 
@@ -86,7 +79,7 @@ const copyData = async () => {
     console.log('Done copying all data')
 }
 
-const loadTables = async () => {
+const loadTables = async (source: oracledb.Connection) => {
     const tablesResults = await source?.execute<string[]>(`
         SELECT TABLE_NAME
         FROM all_tables
@@ -97,37 +90,41 @@ const loadTables = async () => {
         throw new Error('Could not load tables')
     }
 
-    tables = tablesResults.rows.map(result => result[0])
-        .filter(table => {
-            return !tablesToExclude.includes(table) || (onlyTables.length > 0 && onlyTables.includes(table))
+    tables = tablesResults.rows
+        .map((result) => result[0])
+        .filter((table) => {
+            return (
+                !tablesToExclude.includes(table) ||
+                (onlyTables.length > 0 && onlyTables.includes(table))
+            )
         })
-
 }
-
 
 export const alias = 'copyDB'
 
 export default async (args: CommandArgs) => {
-    destination = await connectTo('DESTINATION')
-    source = await connectTo('SOURCE')
+    const destination = await connectTo('DESTINATION')
+    const source = await connectTo('SOURCE')
     oracledb.fetchAsString = [oracledb.CLOB]
+
     console.time('Copying database!')
+
     const executeOnly = (process.env.COPY?.split(',') ?? []) as WhatCopy[]
 
     try {
         console.time('Search tables')
-        await loadTables()
+        await loadTables(source)
         console.timeEnd('Search tables')
 
         if (executeOnly.includes('sequence')) {
             console.time('Copy sequences')
-            await copySequences()
+            await copySequences(source, destination)
             console.timeEnd('Copy sequences')
         }
 
         if (executeOnly.includes('table')) {
             console.time('Copy tables')
-            await copyTables()
+            await copyTables(source, destination)
             console.timeEnd('Copy tables')
         }
 
@@ -139,10 +136,9 @@ export default async (args: CommandArgs) => {
 
         if (executeOnly.includes('foreign')) {
             console.time('Adding foreign keys')
-            await addingForeignKeys()
+            await addingForeignKeys(source, destination)
             console.timeEnd('Adding foreign keys')
         }
-
     } catch (e) {
         throw e
     } finally {
