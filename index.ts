@@ -1,8 +1,8 @@
 import 'module-alias/register'
 import 'dotenv/config'
 import minimist from 'minimist'
-import {readFiles} from "~/utils/fileUtils";
-import type ImportScript from "~/types/importScript";
+import {readFiles} from "~/utils/fileUtils"
+import type ImportScript from "~/types/importScript"
 
 const consoleArguments = minimist(process.argv.slice(2))
 
@@ -31,19 +31,18 @@ const execute = async () => {
     const script = importedFiles.filter(file => file.alias === executeScript)[0]
 
     if (!script) {
-
         console.error('Script not found')
         process.exit(1)
     }
-    
+
     console.log('Running script: ', executeScript)
 
     await script.script(consoleArguments)
 }
 
 execute()
-    .then(r => {
-        console.error('Done! Result: ', r)
+    .then(() => {
+        console.info('Done!')
         process.exit(0)
     })
     .catch(e => {

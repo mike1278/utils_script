@@ -1,7 +1,6 @@
 import * as fs from 'fs'
 import {parse} from "csv-parse"
-import {createArrayCsvWriter, createObjectCsvWriter} from "csv-writer"
-import type {ObjectStringifierHeader} from "csv-writer/src/lib/record"
+import {createObjectCsvWriter} from "csv-writer"
 
 const readCsv = <T = any>(file: string, delimiter = ';'): Promise<T[]> => {
     return new Promise((resolve, reject) => {

@@ -2,6 +2,7 @@
   "compilerOptions": {
     "baseUrl": ".",
     "forceConsistentCasingInFileNames": true,
+    "allowImportingTsExtensions": true,
     "jsx": "preserve",
     "jsxImportSource": "vue",
     "target": "ESNext",
@@ -13,7 +14,9 @@
     "strict": true,
     "noImplicitThis": true,
     "esModuleInterop": true,
-    "types": [],
+    "types": [
+      "node"
+    ],
     "verbatimModuleSyntax": true,
     "allowJs": true,
     "noEmit": true,
@@ -37,14 +40,19 @@
   "include": [
     "./nuxt.d.ts",
     "../**/*",
-    "..",
+    ".."
   ],
   "ts-node": {
     "esm": true,
-    "require": ["tsconfig-paths/register"],
+    "transpileOnly": true,
+    "require": [
+      "tsconfig-paths/register"
+    ],
     "experimentalSpecifierResolution": "node"
   },
-  "lib": ["esnext"],
+  "lib": [
+    "esnext"
+  ],
   "exclude": [
     "../node_modules",
     "../dist",
